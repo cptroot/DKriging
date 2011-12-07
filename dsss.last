@@ -1,4 +1,0 @@
-[kriging.d]
-target=kriging
-buildflags+=-Ic:\D\Derelict2\import
-buildflags+=-Sc:\D\Derelict2\lib
