@@ -1,6 +1,8 @@
 module matrix;
 
 import std.typecons;
+import std.math;
+import std.conv;
 
 struct Matrix {
   double[][] values;
@@ -111,8 +113,45 @@ struct Matrix {
 
   Matrix inverse() if (length[0] == length[1]) {
     Matrix augmented = this.augment(identity(length[1]));
+    double eps = .00000000001d;
     return augmented;
 
     //Not Done!!
+    int h = length[0];
+    int w = length[0] * 2;
+    double c;
+    foreach (y; 0..h){
+      int maxrow = y;
+      foreach (i; y+1..h) {    // Find max pivot
+        if (to!double(abs(augmented[i, y])) > to!double(abs(augmented[maxrow, y]))) {
+          maxrow = i;
+        }
+      }
+      double[] temp;
+      temp = values[y];
+      values[y] = values[maxrow];
+      values[maxrow] = temp;
+      
+      if (to!double(abs(augmented[y, y])) <= eps)     // Singular?
+        return null;
+      foreach (i; y+1..h) {   // Eliminate column y
+        c = augmented[i, y] / augmented[y, y];
+        foreach (x; y..w) 
+          m[i, x] -= m[y, x] * c;
+      }
+    }
+    for (int y = h-1; y > -1; y--): // Backsubstitute
+      c  = augmented[y, y];
+      foreach (i; 0..y) {
+        for (x = w - 1; x > y - 1; x--) {
+          augmented[i, x] -=  augmented[y, x] * augmented[i, y] / c;
+        }
+      }
+      augmented[y, y] /= c;
+      foreach (x; h..w) {       // Normalize row y
+        augmented[y, x] /= c;
+      }
+    }
+    return augmented;
   }
 }
