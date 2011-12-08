@@ -88,5 +88,31 @@ struct Matrix {
     return result;
   }
 
-  
+  Matrix augment(Matrix other) if (length[0] == other.length[0]) {
+    Matrix result = Matrix(length[0], length[1] + other.length[1]);
+    foreach (i; 0..length[0]) {
+      foreach (j; 0..length[1]) {
+        result[i, j] = this[i, j];
+      }
+      foreach (j; 0..other.length[1]) {
+        result[i, j + length[1]] = other[i, j];
+      }
+    }
+    return result;
+  }
+
+  static Matrix identity(int n) {
+    Matrix result = Matrix(n, n);
+    foreach (i; 0..n) {
+      result[i, i] = 1;
+    }
+    return result;
+  }
+
+  Matrix inverse() if (length[0] == length[1]) {
+    Matrix augmented = this.augment(identity(length[1]));
+    return augmented;
+
+    //Not Done!!
+  }
 }
