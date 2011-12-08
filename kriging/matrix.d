@@ -4,10 +4,10 @@ import std.typecons;
 
 struct Matrix {
   double[][] values;
-  Tuple!(int, int) length = tuple(0, 0);
+  Tuple!(int, int) length = tuple(1, 1);
   
   this(int m, int n) {
-    values = new double[n][m];
+    values = new double[][m];
     length = tuple(m, n);
   }
 
@@ -19,31 +19,31 @@ struct Matrix {
     return values[j][i];
   }
 
-  double opIndexAssign(double value, size_t i, size_t j) {
+  void opIndexAssign(double value, size_t i, size_t j) {
     values[j][i] = value;
   }
 
-  double opIndexOpAssign(string op)(double value, size_t i, size_t j) {
-    mixin("values[j][i] " + op + "= value");
+  void opIndexOpAssign(string op)(double value, size_t i, size_t j) {
+    mixin("values[j][i] " ~ op ~ "= value;");
   }
   
   Matrix opBinary(string op)(Matrix other) {
     switch (op) {
       case "*":
-        return opMult(Matrix other);
+        return opMult(other);
         break;
       case "+":
-        return opAdd(Matrix other);
+        return opAdd(other);
         break;
       case "-":
-        return opSubtract(Matrix other);
+        return opSubtract(other);
         break;
     }
-    throw new exception("Unsupported operator");
+    throw new Exception("Unsupported operator");
   }
 
   Matrix opMult(Matrix other) {
-    Matrix result = new Matrix(length[0], other.length[1]);
+    Matrix result = Matrix(length[0], other.length[1]);
     double sum;
     foreach (i; 0..length[0]) {
       foreach (j; 0..other.length[1]) {
@@ -57,8 +57,8 @@ struct Matrix {
   }
 
   Matrix opAdd(Matrix other) {
-    if (other.length != length) throw new exception("Mismatched matrices");
-    Matrix result = this.dup;
+    if (other.length != length) throw new Exception("Mismatched matrices");
+    Matrix result = this;
     foreach (i; 0..length[0]) {
       foreach (j; 0..length[1]) {
         result[i, j] += other[i, j];
@@ -67,9 +67,9 @@ struct Matrix {
     return result;
   }
 
-  Matrix opAdd(Matrix other) {
-    if (other.length != length) throw new exception("Mismatched matrices");
-    Matrix result = this.dup;
+  Matrix opSubtract(Matrix other) {
+    if (other.length != length) throw new Exception("Mismatched matrices");
+    Matrix result = this;
     foreach (i; 0..length[0]) {
       foreach (j; 0..length[1]) {
         result[i, j] -= other[i, j];
@@ -79,7 +79,7 @@ struct Matrix {
   }
   
   Matrix transpose() {
-    Matrix result = new Matrix(length[1], length[0]);
+    Matrix result = Matrix(length[1], length[0]);
     foreach (i; 0..length[0]) {
       foreach (j; 0..length[1]) {
         result[j, i] = this[i, j];
