@@ -1,3 +1,6 @@
 
 dsss_objs/
 *.obj
+*.d.deps
+*.exe
+*.lib

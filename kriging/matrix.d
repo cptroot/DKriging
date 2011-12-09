@@ -1,15 +1,22 @@
 module matrix;
 
 import std.typecons;
-import std.math;
+import std.math : abs;
 import std.conv;
+import std.stdio;
 
 struct Matrix {
   double[][] values;
   Tuple!(int, int) length = tuple(1, 1);
   
   this(int m, int n) {
-    values = new double[][m];
+    values = new double[][n];
+    foreach (j; 0..n) {
+      values[j] = new double[m];
+      foreach (i; 0..m) {
+        values[j][i] = 0;
+      }
+    }
     length = tuple(m, n);
   }
 
@@ -18,10 +25,12 @@ struct Matrix {
   }
 
   double opIndex(size_t i, size_t j) {
+    debug writeln(i, " ", j, " ", length);
     return values[j][i];
   }
 
   void opIndexAssign(double value, size_t i, size_t j) {
+    debug writeln(value, " ", i, " ", j, " ", length);
     values[j][i] = value;
   }
 
@@ -90,7 +99,9 @@ struct Matrix {
     return result;
   }
 
-  Matrix augment(Matrix other) if (length[0] == other.length[0]) {
+  Matrix augment(Matrix other) {
+    debug writeln("augment");
+    if (length[0] != other.length[0]) throw new Exception("Mismatched lengths");
     Matrix result = Matrix(length[0], length[1] + other.length[1]);
     foreach (i; 0..length[0]) {
       foreach (j; 0..length[1]) {
@@ -111,17 +122,18 @@ struct Matrix {
     return result;
   }
 
-  Matrix inverse() if (length[0] == length[1]) {
+  Matrix inverse() {
+    if (length[0] != length[1]) throw new Exception("Non-Square Matrix");
+    debug writeln("inverse()");
     Matrix augmented = this.augment(identity(length[1]));
-    double eps = .00000000001d;
-    return augmented;
+    double eps = .00000000001;
 
-    //Not Done!!
     int h = length[0];
     int w = length[0] * 2;
     double c;
     foreach (y; 0..h){
       int maxrow = y;
+      debug writeln("Find Max Pivot");
       foreach (i; y+1..h) {    // Find max pivot
         if (to!double(abs(augmented[i, y])) > to!double(abs(augmented[maxrow, y]))) {
           maxrow = i;
@@ -132,18 +144,21 @@ struct Matrix {
       values[y] = values[maxrow];
       values[maxrow] = temp;
       
+      debug writeln("Singular?");
       if (to!double(abs(augmented[y, y])) <= eps)     // Singular?
-        return null;
+        return Matrix.init;
+      debug writeln("Eliminate column y");
       foreach (i; y+1..h) {   // Eliminate column y
         c = augmented[i, y] / augmented[y, y];
         foreach (x; y..w) 
-          m[i, x] -= m[y, x] * c;
+          augmented[i, x] -= augmented[y, x] * c;
       }
     }
-    for (int y = h-1; y > -1; y--): // Backsubstitute
+    debug writeln("Backsubstitute");
+    for (int y = h-1; y > -1; y--) { // Backsubstitute
       c  = augmented[y, y];
       foreach (i; 0..y) {
-        for (x = w - 1; x > y - 1; x--) {
+        for (int x = w - 1; x > y - 1; x--) {
           augmented[i, x] -=  augmented[y, x] * augmented[i, y] / c;
         }
       }
@@ -152,6 +167,12 @@ struct Matrix {
         augmented[y, x] /= c;
       }
     }
-    return augmented;
+    Matrix result = Matrix(h, h);
+    foreach (i; 0..h) {
+      foreach (j; 0..h) {
+        result[i, j] = augmented[i, j + h];
+      }
+    }
+    return result;
   }
 }
