@@ -25,12 +25,12 @@ struct Matrix {
   }
 
   double opIndex(size_t i, size_t j) {
-    debug writeln(i, " ", j, " ", length);
+    //debug writeln(i, " ", j, " ", length);
     return values[j][i];
   }
 
   void opIndexAssign(double value, size_t i, size_t j) {
-    debug writeln(value, " ", i, " ", j, " ", length);
+    //debug writeln(value, " ", i, " ", j, " ", length);
     values[j][i] = value;
   }
 
@@ -49,21 +49,28 @@ struct Matrix {
       case "-":
         return opSubtract(other);
         break;
+      default:
+        throw new Exception("Unsupported operator: " ~ op);
+        break;
     }
     throw new Exception("Unsupported operator");
   }
 
   Matrix opMult(Matrix other) {
+    debug writeln("opMult()");
+    writeln(values, " ", other.values);
     Matrix result = Matrix(length[0], other.length[1]);
     double sum;
     foreach (i; 0..length[0]) {
       foreach (j; 0..other.length[1]) {
+        sum = 0;
         foreach (n; 0..length[1]) {
           sum += this[i, n] * other[n, j];
         }
         result[i, j] = sum;
       }
     }
+    writeln(result.values);
     return result;
   }
 
@@ -96,6 +103,7 @@ struct Matrix {
         result[j, i] = this[i, j];
       }
     }
+    debug writeln("transpose ", result.values);
     return result;
   }
 
@@ -140,11 +148,18 @@ struct Matrix {
         }
       }
       double[] temp;
-      temp = values[y];
-      values[y] = values[maxrow];
-      values[maxrow] = temp;
+      foreach (j; 0..w) {
+        temp ~= augmented[y, j];
+      }
+      foreach (j; 0..w) {
+        augmented[y, j] = augmented[maxrow, j];
+      }
+      foreach (j; 0..w) {
+        augmented[maxrow, j] = temp[j];
+      }
       
       debug writeln("Singular?");
+      debug writeln(augmented[y, y]);
       if (to!double(abs(augmented[y, y])) <= eps)     // Singular?
         return Matrix.init;
       debug writeln("Eliminate column y");

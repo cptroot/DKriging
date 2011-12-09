@@ -1,19 +1,14 @@
 import std.stdio;
+import std.typecons;
 
 import matrix;
+import kriging;
+alias Tuple!(double, double, double) Point;
 
 void main() {
-  Matrix m = Matrix(3, 3);
-  m[0, 0] = 2;
-  m[0, 1] = -1;
-  m[1, 0] = -1;
-  m[1, 1] = 2;
-  m[1, 2] = -1;
-  m[2, 1] = -1;
-  m[2, 2] = 2;
-
-  writeln(m.values);
-  
-  Matrix result = m.inverse();
-  writeln(result.values);
+  Point[] points;
+  points ~= tuple(1., 0., 0.);
+  points ~= tuple(2., 1., 0.);
+  Tuple!(double, double) unknown = tuple(1.75, 0.);
+  writeln(krige(points, unknown));
 }
