@@ -1,4 +1,4 @@
-module matrix;
+module kriging.matrix;
 
 import std.typecons;
 import std.math : abs;
@@ -26,11 +26,13 @@ struct Matrix {
 
   double opIndex(size_t i, size_t j) {
     //debug writeln(i, " ", j, " ", length);
+    if (i >= length[0] || j >= length[1]) throw new Exception("Range violation");
     return values[j][i];
   }
 
   void opIndexAssign(double value, size_t i, size_t j) {
     //debug writeln(value, " ", i, " ", j, " ", length);
+    if (i >= length[0] || j >= length[1]) throw new Exception("Range violation");
     values[j][i] = value;
   }
 
@@ -58,7 +60,6 @@ struct Matrix {
 
   Matrix opMult(Matrix other) {
     debug writeln("opMult()");
-    writeln(values, " ", other.values);
     Matrix result = Matrix(length[0], other.length[1]);
     double sum;
     foreach (i; 0..length[0]) {
@@ -70,7 +71,6 @@ struct Matrix {
         result[i, j] = sum;
       }
     }
-    writeln(result.values);
     return result;
   }
 
@@ -136,58 +136,76 @@ struct Matrix {
     Matrix augmented = this.augment(identity(length[1]));
     double eps = .00000000001;
 
-    int h = length[0];
-    int w = length[0] * 2;
+    int m = length[0];
+    int n = length[0] * 2;
     double c;
-    foreach (y; 0..h){
-      int maxrow = y;
+    foreach (k; 0..m){
+      debug writeln("k: ", k);
+      
+      debug augmented.display();
+      int maxrow = k;
       debug writeln("Find Max Pivot");
-      foreach (i; y+1..h) {    // Find max pivot
-        if (to!double(abs(augmented[i, y])) > to!double(abs(augmented[maxrow, y]))) {
+      foreach (i; k+1..m) {    // Find max pivot
+        if (to!double(abs(augmented[i, k])) > to!double(abs(augmented[maxrow, k]))) {
           maxrow = i;
         }
       }
-      double[] temp;
-      foreach (j; 0..w) {
-        temp ~= augmented[y, j];
-      }
-      foreach (j; 0..w) {
-        augmented[y, j] = augmented[maxrow, j];
-      }
-      foreach (j; 0..w) {
-        augmented[maxrow, j] = temp[j];
-      }
       
       debug writeln("Singular?");
-      debug writeln(augmented[y, y]);
-      if (to!double(abs(augmented[y, y])) <= eps)     // Singular?
-        return Matrix.init;
-      debug writeln("Eliminate column y");
-      foreach (i; y+1..h) {   // Eliminate column y
-        c = augmented[i, y] / augmented[y, y];
-        foreach (x; y..w) 
-          augmented[i, x] -= augmented[y, x] * c;
+      debug writeln("maxrow: ", maxrow);
+      //debug writeln(augmented[maxrow, k], " ", eps);
+      if (abs(augmented[maxrow, k]) == 0) {
+        throw new Exception("Singular");
+      }
+      //Swap kth row with maxrowth row
+      double temp;
+      foreach (j; 0..n) {
+        temp = augmented[k, j];
+        augmented[k, j] = augmented[maxrow, j];
+        augmented[maxrow, j] = temp;
+      }
+      
+      debug writeln("Swap rows");
+      debug augmented.display();
+      debug writeln("Eliminate column ", k);
+      foreach (i; k+1..m) {   // Eliminate column k
+        c = augmented[i, k] / augmented[k, k];
+        foreach (j; k..n) {
+          augmented[i, j] -= augmented[k, j] * c;
+          //if (abs(augmented[i, j]) <= eps) augmented[i, j] = 0;
+        }
       }
     }
     debug writeln("Backsubstitute");
-    for (int y = h-1; y > -1; y--) { // Backsubstitute
-      c  = augmented[y, y];
-      foreach (i; 0..y) {
-        for (int x = w - 1; x > y - 1; x--) {
-          augmented[i, x] -=  augmented[y, x] * augmented[i, y] / c;
+    for (int k = m-1; k > -1; k--) { // Backsubstitute
+      c  = augmented[k, k];
+      foreach (i; 0..k) {
+        for (int j = n - 1; j > k - 1; j--) {
+          augmented[i, j] -= augmented[k, j] * augmented[i, k] / c;
+          if (abs(augmented[i, j]) <= eps) augmented[i, j] = 0;
         }
       }
-      augmented[y, y] /= c;
-      foreach (x; h..w) {       // Normalize row y
-        augmented[y, x] /= c;
+      augmented[k, k] /= c;
+      foreach (j; m..n) {       // Normalize row k
+        augmented[k, j] /= c;
       }
     }
-    Matrix result = Matrix(h, h);
-    foreach (i; 0..h) {
-      foreach (j; 0..h) {
-        result[i, j] = augmented[i, j + h];
+    Matrix result = Matrix(m, m);
+    foreach (i; 0..m) {
+      foreach (j; 0..m) {
+        result[i, j] = augmented[i, j + m];
       }
     }
+    debug augmented.display();
     return result;
+  }
+
+  void display() {
+    foreach (i; 0..length[0]) {
+      foreach (j; 0..length[1]) {
+        writef("%+.2f  ", values[j][i]);
+      }
+      writeln();
+    }
   }
 }
